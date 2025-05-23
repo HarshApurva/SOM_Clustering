@@ -16,9 +16,9 @@ Output:
 Saves a list of top 10 genes per SOM cluster to a text file SOM_clustered_genes_1.txt.
 
 Requirements
-pandas
-numpy
-matplotlib
-seaborn
-sklearn
-minisom
+  pandas
+  numpy
+  matplotlib
+  seaborn
+  sklearn
+  minisom
