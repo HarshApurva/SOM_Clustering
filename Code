@@ -1,0 +1,72 @@
+import pandas as pd
+from minisom import MiniSom
+from sklearn.preprocessing import MinMaxScaler
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Loading data
+df = pd.read_csv("Merged Analysis Results.csv") #Enter your file name.
+
+# Filtering significant genes (adjust threshold if needed)
+sig_df = df[df["Adjusted p-Value"] < 0.05].copy()
+
+# Select features for clustering
+features = sig_df[["Log2 fold change", "Pvalue", "Adjusted p-Value"]]
+scaler = MinMaxScaler()
+normalized_data = scaler.fit_transform(features)
+
+# Initialize SOM
+som_x, som_y = 6, 6  # Grid size (tune based on data)
+som = MiniSom(som_x, som_y, normalized_data.shape[1], sigma=1.0, learning_rate=0.5)
+som.random_weights_init(normalized_data)
+som.train_random(normalized_data, 1000)  # Train SOM
+
+# Map each sample to its winning node
+win_map = som.win_map(normalized_data)
+
+# Assign each gene to a cluster based on its winning neuron
+coordinates = [som.winner(x) for x in normalized_data]
+sig_df['SOM_Cluster'] = [f"{x[0]}_{x[1]}" for x in coordinates]
+
+# Plot SOM clustering result
+plt.figure(figsize=(10, 8))
+sns.scatterplot(
+    x=features["Log2 fold change"],
+    y=features["Adjusted p-Value"],
+    hue=sig_df["SOM_Cluster"],
+    palette="tab20",
+    s=50
+)
+import numpy as np
+grouped = sig_df.groupby("SOM_Cluster")["Gene symbol"].apply(list)
+
+#Save clustered genes list to a file
+with open("SOM_clustered_genes_1.txt", "w") as f:
+    for cluster_id, genes in grouped.items():
+        f.write(f"\nCluster {cluster_id}:\n{genes[:10]}\n")  # show first 10 genes per cluster
+
+from pylab import bone, pcolor, colorbar, plot
+
+bone()
+pcolor(som.distance_map().T)
+colorbar()
+plt.title("U-Matrix - SOM Distance Map")
+plt.show()
+
+# Only label top N genes (optional)
+top_genes = sig_df.groupby('SOM_Cluster').head(1)  # or choose based on Log2FC
+
+plt.figure(figsize=(10, 8))
+sns.scatterplot(
+    x=sig_df["Log2 fold change"],
+    y=sig_df["Adjusted p-Value"],
+    hue=sig_df["SOM_Cluster"],
+    palette="tab20",
+    s=50
+)
+
+plt.gca().invert_yaxis()
+plt.title("SOM Clustering with Gene Labels")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
