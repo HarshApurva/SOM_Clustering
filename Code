@@ -41,7 +41,7 @@ import numpy as np
 grouped = sig_df.groupby("SOM_Cluster")["Gene symbol"].apply(list)
 
 #Save clustered genes list to a file
-with open("SOM_clustered_genes_1.txt", "w") as f:
+with open("SOM_clustered_genes.txt", "w") as f:
     for cluster_id, genes in grouped.items():
         f.write(f"\nCluster {cluster_id}:\n{genes[:10]}\n")  # show first 10 genes per cluster
 
